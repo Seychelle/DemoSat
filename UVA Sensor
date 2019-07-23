@@ -1,0 +1,95 @@
+/*
+ *  Arduino Temperature Data Logging
+ *  
+ *  by Dejan Nedelkovski, www.HowToMechatronics.com
+ */
+#include <SD.h>
+#include <SPI.h>
+#include "clocktime.h"
+
+File myfile;
+int pinCS = 53; // Pin 10 on Arduino Uno
+const int chipSelect = 10;
+
+clock_time_t clock_time(void)
+{
+ return millis();
+} 
+
+void setup() {
+  // Open serial communications and wait for port to open:
+  Serial.begin(9600);
+  while (!Serial) {
+    
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+
+  Serial.print("Initializing SD card...");
+
+  // see if the card is present and can be initialized:
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+    // don't do anything more:
+    while (1);
+  }
+///////////////////////////////////////////////////////////////////////////////////
+  Serial.println("card initialized.");
+  
+}
+void loop() { 
+
+  myfile = SD.open("Sunshine.txt", FILE_WRITE); // filesize name limit is 8 characters long
+  if (myfile){  
+      int UVAsensor = analogRead(A0);
+      int UVBsensor = analogRead(A1);
+      int UVCsensor = analogRead(A2);
+      
+      float voltageUVA = (UVAsensor * (5.0 / 1023.0)) * (5.0/2.0) ;
+      float voltageUVB = (UVBsensor * (5.0 / 1023.0)) * (5.0/2.0);
+      float voltageUVC = (UVCsensor * (5.0 / 1023.0)) * (5.0/2.0);
+
+
+      myfile.print(clock_time());   
+      myfile.print("  ");    
+      myfile.print(voltageUVA);
+
+      myfile.print("          ");
+      myfile.print(clock_time());   
+      myfile.print("  ");    
+      myfile.print(voltageUVB);
+
+      myfile.print("          ");
+      myfile.print(clock_time());   
+      myfile.print("  ");    
+      myfile.println(voltageUVC);
+      
+      Serial.print(clock_time()); 
+      Serial.print("  "); 
+      Serial.print(voltageUVA); 
+
+ 
+      Serial.print("             ");
+      Serial.print(clock_time()); 
+      Serial.print("  "); 
+      Serial.print(voltageUVB); 
+
+      Serial.print("             ");
+      Serial.print(clock_time()); 
+      Serial.print("  "); 
+      Serial.println(voltageUVC);
+
+      
+          while(myfile.available()){
+            Serial.write(myfile.read());  
+          }
+  
+      myfile.close();  
+  }
+  // if the file didn't open, print an error:
+  else { 
+    Serial.println("File wasn't created");
+  }
+  delay(25);
+  
+}
